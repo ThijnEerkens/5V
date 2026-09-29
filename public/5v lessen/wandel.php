@@ -1,77 +1,46 @@
-
 <!DOCTYPE html>
 <html lang="nl">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Wandelchallenge</title>
+        <style>
+            table {
+                border-collapse: collapse;
+            }
+            td {
+                border: 2px solid #32b7d8;
+                padding: 6px 12px;
+            }
+        </style>
     </head>
     <body>
-        <img src="wandelen.png" alt="wandelen" style="float: right;" />
+        <img src="../afbeeldingen/wandelen.png" alt="wandelen" style="float: right;" />
         <h2>Wandelchallenge</h2>
 <?php
 
-    $dagen = 7;
-    $afstand = 5;
+    $dagen = 35;
+    $afstand = 3;
     
 ?>
         <p>Ik ga de komende <?= $dagen ?> dagen een challenge aan. Iedere dag ben ik van plan <?= $afstand ?> kilometer te gaan wandelen.</p>
         <p>In het onderstaande schema kan ik voor iedere dag zien, hoeveel kilometer ik op dat moment in totaal al heb gewandeld.</p>
-        
         <table>
-  <tr>
-    <th>Dag</th>
-    <th>afstand</th>
-    
-  </tr>
-  <tr>
-    <td>1</td>
-    <td> <?= $afstand; ?> </td>
-   
-  </tr>
-  <tr>
-    <td>2</td>
-    <td><?= $afstand; ?>  </td>
-  
-  </tr>
-  <tr>
-    <td>3</td>
-    <td><?= $afstand; ?>  </td>
-  
-  </tr>
-</table>
-        
-        <!--
-          
-            Geef hieronder een tabel weer met alle dagen en de totale afstand die ik op die dag heb gewandeld:
-            
-            dag  |  afstand
-            -----+--------------
-            1    |  5 km
-            -----+--------------
-            2    |  10 km
-            -----+--------------
-            3    |  15 km
-            
-            Zorg dat deze tabel altijd klopt. Ook wanneer ik een ander aantal dagen of andere afstand zou gaan lopen.
-            Vergeet niet de juiste <th> danwel <td> te gebruiken.
-          
-        -->
+            <tr>
+                <th>dag</th>
+                <th>totale afstand</th>
+            </tr>
+    <?php
+        $totaleAfstand = 0;
+        for ( $i = 1; $i <= $dagen ; $i++ ) {
+            $totaleAfstand += $afstand;
+            echo "
+            <tr>
+                <td>$i</td>
+                <td>$totaleAfstand km</td>
+            </tr>";
+        }
+    ?>
+        </table>
     </body>
 </html>
-
-
-    </body>
-</html
-
-
-
-
-
-
-
-
-
-a c h t e r l i j k
-
-1n 2p 

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Data Engine v2.6</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-main: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-input: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            --radius: 16px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container { width: 100%; max-width: 1200px; }
+
+        /* Dashboard Header & Stats */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        h1 { font-size: 2rem; font-weight: 800; background: linear-gradient(to right, #22d3ee, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-surface);
+            padding: 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-card .num { font-size: 1.5rem; font-weight: 700; color: #38bdf8; }
+        .stat-card .label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
+
+        /* Controls: Zoeken, Filteren & Export */
+        .toolbar {
+            display: flex;
+            gap: 16px;
+            background: var(--bg-surface);
+            padding: 16px;
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-wrapper { flex: 1; min-width: 250px; position: relative; }
+        .search-wrapper input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .filter-select {
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-export { background: #475569; color: white; }
+        .btn-export:hover { background: #334155; }
+        .btn-danger { background: var(--danger); color: white; padding: 6px 12px; font-size: 0.85rem; }
+
+        /* Formulier */
+        .form-panel {
+            background: var(--bg-surface);
+            padding: 24px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .input-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-field label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+        .input-field input, .input-field select {
+            padding: 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            outline: none;
+        }
+
+        .input-field input:focus { border-color: var(--primary); }
+
+        /* Giga Tabel */
+        .table-container {
+            background: var(--bg-surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th {
+            background: #1e293b;
+            padding: 18px 24px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        th:hover { color: white; background: #334155; }
+        th.sort-asc::after { content: " ↑"; position: absolute; right: 8px; }
+        th.sort-desc::after { content: " ↓"; position: absolute; right: 8px; }
+
+        td { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 0.95rem; vertical-align: middle; }
+        tr:hover td { background: #334155; }
+
+        /* Badges & Editable inputs */
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; display: inline-block; }
+        .badge.Admin { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .badge.Docent { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+        .badge.Student { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+
+        .username-tag { color: #f43f5e; font-family: monospace; font-weight: 600; }
+
+        .td-edit {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 0.95rem;
+            width: 100%;
+            padding: 4px;
+            border-radius: 4px;
+        }
+        .td-edit:focus { background: var(--bg-input); outline: 1px solid var(--primary); }
+
+        .no-data { text-align: center; padding: 40px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>System Engine v2.6</h1>
+        <button class="btn btn-export" onclick="exportToCSV()">📥 Exporteer CSV</button>
+    </div>
+
+    <!-- Live Teller Stats -->
+    <div class="stats-grid">
+        <div class="stat-card"><div class="num" id="stat-total">0</div><div class="label">Totaal</div></div>
+        <div class="stat-card"><div class="num" id="stat-students">0</div><div class="label">Students</div></div>
+        <div class="stat-card"><div class="num" id="stat-teachers">0</div><div class="label">Docenten</div></div>
+        <div class="stat-card"><div class="num" id="stat-admins">0</div><div class="label">Admins</div></div>
+    </div>
+
+    <!-- Formulier voor Toevoegen -->
+    <div class="form-panel">
+        <form id="user-form" onsubmit="addUser(event)">
+            <div class="form-grid">
+                <div class="input-field"><label>Volledige Naam</label><input type="text" id="form-name" required placeholder="Esmee de Wit"></div>
+                <div class="input-field"><label>Username</label><input type="text" id="form-user" required placeholder="esmee_wit"></div>
+                <div class="input-field"><label>E-mail</label><input type="email" id="form-email" required placeholder="e.dewit@school.nl"></div>
+                <div class="input-field"><label>School / Instelling</label><input type="text" id="form-school" required placeholder="TU Delft"></div>
+                <div class="input-field">
+                    <label>Rol</label>
+                    <select id="form-role">
+                        <option value="Student">Student</option>
+                        <option value="Docent">Docent</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">⚡ Registreer</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Live Data Filters -->
+    <div class="toolbar">
+        <div class="search-wrapper">
+            <input type="text" id="search-input" placeholder="🔍 Live zoeken op naam, mail, school..." oninput="renderTable()">
+        </div>
+        <select id="filter-role" class="filter-select" onchange="renderTable()">
+            <option value="All">Alle Rollen</option>
+            <option value="Student">Alleen Studenten</option>
+            <option value="Docent">Alleen Docenten</option>
+            <option value="Admin">Alleen Admins</option>
+        </select>
+    </div>
+
+    <!-- De Datatabel -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th onclick="sortTable('name')" id="th-name">Naam</th>
+                    <th onclick="sortTable('username')" id="th-username">Gebruikersnaam</th>
+                    <th onclick="sortTable('email')" id="th-email">E-mailadres</th>
+                    <th onclick="sortTable('school')" id="th-school">School</th>
+                    <th onclick="sortTable('role')" id="th-role">Rol</th>
+                    <th style="cursor: default;">Acties</th>
+                </tr>
+            </thead>

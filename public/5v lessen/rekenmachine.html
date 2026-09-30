@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS - Futuristic Super Calculator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN for Financial visualizers -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#030712',
+                            card: 'rgba(15, 23, 42, 0.75)',
+                            cyan: '#06b6d4',
+                            magenta: '#ec4899',
+                            green: '#10b981',
+                            gold: '#f59e0b',
+                            accent: 'var(--accent-color, #06b6d4)'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        tech: ['Orbitron', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --accent-color: #06b6d4;
+            --accent-glow: rgba(6, 182, 212, 0.4);
+            --accent-secondary: #8b5cf6;
+        }
+
+        body {
+            background-color: #030712;
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism styling */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-panel-glow {
+            box-shadow: 0 0 25px var(--accent-glow);
+            border: 1px solid var(--accent-color);
+        }
+
+        /* Cyberpunk Glowing Elements */
+        .glow-text {
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .cyber-btn {
+            position: relative;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .cyber-btn:hover {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-glow);
+            transform: translateY(-2px);
+        }
+
+        .cyber-btn:active {
+            transform: translateY(1px);
+        }
+
+        .cyber-btn-op {
+            background: rgba(var(--accent-color-rgb, 6, 182, 212), 0.15);
+            border-color: var(--accent-color);
+            color: #fff;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        /* Scanline Overlay */
+        .scanline {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.25) 50%,
+                rgba(0, 0, 0, 0.25)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* Ripple effect container */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple-effect 0.5s linear;
+            background-color: rgba(255, 255, 255, 0.3);
+            pointer-events: none;
+        }
+
+        @keyframes ripple-effect {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen relative flex flex-col justify-between overflow-x-hidden select-none">
+    <!-- Background Canvas for Interactive Particle Constellation -->
+    <canvas id="bgCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+    
+    <!-- Ambient Glowing Orbs -->
+    <div class="fixed top-1/4 -left-20 w-96 h-96 rounded-full bg-cyan-500/10 blur-[120px] pointer-events-none"></div>
+    <div class="fixed bottom-1/4 -right-20 w-96 h-96 rounded-full bg-purple-500/10 blur-[120px] pointer-events-none"></div>
+
+    <!-- Scanline Subtle Overlay -->
+    <div class="fixed inset-0 scanline z-50 pointer-events-none opacity-30"></div>
+
+    <!-- Application Header -->
+    <header class="relative z-10 px-4 lg:px-8 py-4 flex items-center justify-between glass-panel border-b border-gray-800">
+        <div class="flex items-center gap-3">
+            <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-600 shadow-lg shadow-cyan-500/30">
+                <i class="fa-solid fa-microchip text-xl text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-tech text-xl font-bold tracking-wider text-white flex items-center gap-2">
+                    NEXUS <span class="text-xs px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 font-mono">v4.0 Pro</span>
+                </h1>
+                <p class="text-xs text-gray-400 font-mono">ULTRA-QUANTUM CALC ENGINE</p>
+            </div>
+        </div>
+
+        <!-- System Audio & Voice Controls & Theme Customizer -->
+        <div class="flex items-center gap-3">
+            <button id="themeToggle" class="cyber-btn w-9 h-9 rounded-lg flex items-center justify-center text-gray-300 hover:text-cyan-400" title="Switch Theme Palette">
+                <i class="fa-solid fa-palette text-sm"></i>
+            </button>
+            <button id="soundToggle" class="cyber-btn w-9 h-9 rounded-lg flex items-center justify-center text-gray-300 hover:text-cyan-400" title="Toggle Synthesizer SFX">
+                <i id="soundIcon" class="fa-solid fa-volume-high text-sm"></i>
+            </button>
+            <button id="speechToggle" class="cyber-btn w-9 h-9 rounded-lg flex items-center justify-center text-gray-300 hover:text-cyan-400" title="Toggle Voice Output">
+                <i id="speechIcon" class="fa-solid fa-comment-dots text-sm"></i>
+            </button>
+            <button id="githubModalBtn" class="cyber-btn px-3 py-1.5 rounded-lg text-xs font-mono font-medium flex items-center gap-1.5 text-cyan-400 border-cyan-500/40">
+                <i class="fa-brands fa-github text-sm"></i> Deploy Guide
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="relative z-10 flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left / Center Tool Window (Modes) -->
+        <div class="lg:col-span-8 flex flex-col gap-4">
+            
+            <!-- Navigation Mode Selector Tabs -->
+            <div class="glass-panel p-1.5 rounded-2xl flex items-center gap-1 overflow-x-auto no-scrollbar">
+                <button data-mode="standard" class="nav-tab active flex-1 py-2.5 px-4 rounded-xl font-mono text-xs font-semibold flex items-center justify-center gap-2 whitespace-nowrap transition-all duration-200 text-white bg-cyan-500/20 border border-cyan-500/50">
+                    <i class="fa-solid fa-calculator"></i> Scientific
+                </button>
+                <button data-mode="graph" class="nav-tab flex-1 py-2.5 px-4 rounded-xl font-mono text-xs font-semibold flex items-center justify-center gap-2 whitespace-nowrap transition-all duration-200 text-gray-400 hover:text-white hover:bg-slate-800/50">
+                    <i class="fa-solid fa-chart-line"></i> Graph 2D
+                </button>
+                <button data-mode="converter" class="nav-tab flex-1 py-2.5 px-4 rounded-xl font-mono text-xs font-semibold flex items-center justify-center gap-2 whitespace-nowrap transition-all duration-200 text-gray-400 hover:text-white hover:bg-slate-800/50">
+                    <i class="fa-solid fa-right-left"></i> Converter
+                </button>
+                <button data-mode="financial" class="nav-tab flex-1 py-2.5 px-4 rounded-xl font-mono text-xs font-semibold flex items-center justify-center gap-2 whitespace-nowrap transition-all duration-200 text-gray-400 hover:text-white hover:bg-slate-800/50">
+                    <i class="fa-solid fa-sack-dollar"></i> Financial
+                </button>
+                <button data-mode="programmer" class="nav-tab flex-1 py-2.5 px-4 rounded-xl font-mono text-xs font-semibold flex items-center justify-center gap-2 whitespace-nowrap transition-all duration-200 text-gray-400 hover:text-white hover:bg-slate-800/50">
+                    <i class="fa-solid fa-code"></i> Programmer
+                </button>
+                <button data-mode="matrix" class="nav-tab flex-1 py-2.5 px-4 rounded-xl font-mono text-xs font-semibold flex items-center justify-center gap-2 whitespace-nowrap transition-all duration-200 text-gray-400 hover:text-white hover:bg-slate-800/50">
+                    <i class="fa-solid fa-table-cells"></i> Matrix
+                </button>
+            </div>
+
+            <!-- 1. SCIENTIFIC & STANDARD CALCULATOR INTERFACE -->
+            <div id="standardMode" class="calc-mode-panel flex flex-col gap-4">
+                
+                <!-- Display Terminal Glass Panel -->
+                <div class="glass-panel p-5 rounded-2xl flex flex-col justify-between min-h-[150px] relative overflow-hidden border border-cyan-500/20">
+                    <!-- Status Indicators -->
+                    <div class="flex items-center justify-between text-xs font-mono text-gray-400 mb-2">
+                        <div class="flex items-center gap-3">
+                            <span id="angleMode" class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold cursor-pointer hover:bg-cyan-500/30 transition-all">DEG</span>
+                            <span id="memoryStatus" class="opacity-40">MEM: 0</span>
+                        </div>
+                        <div id="calcStatusIndicator" class="flex items-center gap-1.5 text-cyan-400">
+                            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> READY
+                        </div>
+                    </div>
+
+                    <!-- Expression History / Live Preview -->
+                    <div id="calcExpression" class="font-mono text-right text-gray-400 text-sm sm:text-base min-h-[24px] overflow-x-auto whitespace-nowrap tracking-wide">
+                        0
+                    </div>
+
+                    <!-- Main Dynamic Output Result Screen -->
+                    <div id="calcDisplay" class="font-mono text-right text-3xl sm:text-5xl font-bold text-white tracking-wider my-1 overflow-x-auto whitespace-nowrap glow-text">
+                        0
+                    </div>
+
+                    <!-- Step-by-Step Breakdown Info Line -->
+                    <div id="stepBreakdown" class="font-mono text-xs text-cyan-400/80 text-right h-4 overflow-hidden text-ellipsis">
+                        System Online. Input formula to execute.
+                    </div>
+                </div>
+
+                <!-- Keypad Controls Container -->
+                <div class="glass-panel p-4 rounded-2xl">
+                    <!-- Top Scientific Function Toggles -->
+                    <div class="grid grid-cols-6 gap-2 mb-3 font-mono text-xs">
+                        <button class="cyber-btn py-2 rounded-xl text-cyan-300" onclick="calc.setAngleMode()">RAD/DEG</button>
+                        <button class="cyber-btn py-2 rounded-xl text-cyan-300" onclick="calc.insert('sin(')">sin</button>
+                        <button class="cyber-btn py-2 rounded-xl text-cyan-300" onclick="calc.insert('cos(')">cos</button>
+                        <button class="cyber-btn py-2 rounded-xl text-cyan-300" onclick="calc.insert('tan(')">tan</button>
+                        <button class="cyber-btn py-2 rounded-xl text-cyan-300" onclick="calc.insert('asin(')">asin</button>
+                        <button class="cyber-btn py-2 rounded-xl text-cyan-300" onclick="calc.insert('acos(')">acos</button>
+                    </div>
+
+                    <!-- Main Interactive Grid Keypad -->
+                    <div class="grid grid-cols-5 sm:grid-cols-6 gap-2.5 font-mono">
+                        <!-- Row 1 -->
+                        <button class="cyber-btn py-3.5 rounded-xl text-purple-400 font-semibold" onclick="calc.insert('log(')">log</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-purple-400 font-semibold" onclick="calc.insert('ln(')">ln</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-purple-400 font-semibold" onclick="calc.insert('(')">(</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-purple-400 font-semibold" onclick="calc.insert(')')">)</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-red-400 font-semibold" onclick="calc.clearAll()">AC</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-red-400 font-semibold" onclick="calc.backspace()"><i class="fa-solid fa-backspace"></i></button>
+
+                        <!-- Row 2 -->
+                        <button class="cyber-btn py-3.5 rounded-xl text-purple-400 font-semibold" onclick="calc.insert('^')">xʸ</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-purple-400 font-semibold" onclick="calc.insert('^2')">x²</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-cyan-300 font-bold text-lg" onclick="calc.insert('7')">7</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-cyan-300 font-bold text-lg" onclick="calc.insert('8')">8</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-cyan-300 font-bold text-lg" onclick="calc.insert('9')">9</button>
+                        <button class="cyber-btn cyber-btn-op py-3.5 rounded-xl font-bold text-lg text-cyan-400" onclick="calc.insert('/')">÷</button>
+
+                        <!-- Row 3 -->
+                        <button class="cyber-btn py-3.5 rounded-xl text-purple-400 font-semibold" onclick="calc.insert('sqrt(')">√</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-purple-400 font-semibold" onclick="calc.insert('cbrt(')">∛</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-cyan-300 font-bold text-lg" onclick="calc.insert('4')">4</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-cyan-300 font-bold text-lg" onclick="calc.insert('5')">5</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-cyan-300 font-bold text-lg" onclick="calc.insert('6')">6</button>
+                        <button class="cyber-btn cyber-btn-op py-3.5 rounded-xl font-bold text-lg text-cyan-400" onclick="calc.insert('*')">×</button>
+
+                        <!-- Row 4 -->
+                        <button class="cyber-btn py-3.5 rounded-xl text-purple-400 font-semibold" onclick="calc.insert('!')">x!</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-purple-400 font-semibold" onclick="calc.insert('%')">%</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-cyan-300 font-bold text-lg" onclick="calc.insert('1')">1</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-cyan-300 font-bold text-lg" onclick="calc.insert('2')">2</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-cyan-300 font-bold text-lg" onclick="calc.insert('3')">3</button>
+                        <button class="cyber-btn cyber-btn-op py-3.5 rounded-xl font-bold text-lg text-cyan-400" onclick="calc.insert('-')">-</button>
+
+                        <!-- Row 5 -->
+                        <button class="cyber-btn py-3.5 rounded-xl text-yellow-400 font-semibold" onclick="calc.insert('pi')">π</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-yellow-400 font-semibold" onclick="calc.insert('e')">e</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-cyan-300 font-bold text-lg" onclick="calc.insert('0')">0</button>
+                        <button class="cyber-btn py-3.5 rounded-xl text-cyan-300 font-bold text-lg" onclick="calc.insert('.')">.</button>
+                        <button class="cyber-btn py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold text-xl col-span-1" onclick="calc.evaluate()">=</button>
+                        <button class="cyber-btn cyber-btn-op py-3.5 rounded-xl font-bold text-lg text-cyan-400" onclick="calc.insert('+')">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. GRAPHING CALCULATOR ENGINE PANEL -->
+            <div id="graphMode" class="calc-mode-panel hidden flex-col gap-4">
+                <div class="glass-panel p-4 rounded-2xl flex flex-col gap-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="font-mono text-sm text-cyan-400 font-bold">f(x) =</span>
+                        <input type="text" id="graphInput" value="sin(x)" class="flex-1 bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-2 font-mono text-sm text-white focus:outline-none focus:border-cyan-500" placeholder="e.g. sin(x), x^2 - 4">
+                        <button onclick="grapher.draw()" class="cyber-btn px-5 py-2 rounded-xl bg-cyan-500/20 text-cyan-300 font-mono text-xs font-bold border border-cyan-500/40">Plot Graph</button>
+                    </div>
+
+                    <div class="relative w-full h-[360px] bg-slate-950/90 rounded-xl overflow-hidden border border-slate-800">
+                        <canvas id="graphCanvas" class="w-full h-full cursor-crosshair"></canvas>
+                        <!-- Floating Controls overlay -->
+                        <div class="absolute bottom-3 right-3 flex gap-2">
+                            <button onclick="grapher.zoom(1.2)" class="cyber-btn w-8 h-8 rounded-lg text-white font-bold">+</button>
+                            <button onclick="grapher.zoom(0.8)" class="cyber-btn w-8 h-8 rounded-lg text-white font-bold">-</button>
+                            <button onclick="grapher.resetView()" class="cyber-btn px-2 h-8 rounded-lg text-xs font-mono text-white">Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. MULTI-UNIT CONVERTER PANEL -->
+            <div id="converterMode" class="calc-mode-panel hidden flex-col gap-4">
+                <div class="glass-panel p-6 rounded-2xl flex flex-col gap-6">
+                    <div class="flex items-center gap-4 border-b border-gray-800 pb-4">
+                        <label class="font-mono text-xs text-gray-400">Category:</label>
+                        <select id="converterCategory" onchange="converter.updateCategory()" class="bg-slate-900 border border-slate-700 text-cyan-400 rounded-xl px-3 py-2 font-mono text-sm focus:outline-none focus:border-cyan-500">
+                            <option value="length">Length</option>
+                            <option value="mass">Mass / Weight</option>
+                            <option value="temp">Temperature</option>
+                            <option value="data">Data Storage</option>
+                            <option value="speed">Speed</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <!-- FROM -->
+                        <div class="flex flex-col gap-2">
+                            <label class="font-mono text-xs text-gray-400">From:</label>
+                            <input type="number" id="convertFromVal" value="1" oninput="converter.calculate()" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 font-mono text-lg text-white focus:outline-none focus:border-cyan-500">
+                            <select id="convertFromUnit" onchange="converter.calculate()" class="bg-slate-800 border border-slate-700 text-gray-300 rounded-xl px-3 py-2 font-mono text-xs"></select>
+                        </div>
+
+                        <!-- TO -->
+                        <div class="flex flex-col gap-2">
+                            <label class="font-mono text-xs text-gray-400">To:</label>
+                            <input type="number" id="convertToVal" readonly class="bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3 font-mono text-lg text-cyan-400 font-bold focus:outline-none">
+                            <select id="convertToUnit" onchange="converter.calculate()" class="bg-slate-800 border border-slate-700 text-gray-300 rounded-xl px-3 py-2 font-mono text-xs"></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. FINANCIAL & LOAN CALCULATOR PANEL -->
+            <div id="financialMode" class="calc-mode-panel hidden flex-col gap-4">
+                <div class="glass-panel p-6 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Inputs -->
+                    <div class="flex flex-col gap-4">
+                        <h3 class="font-tech text-sm text-cyan-400 font-bold">MORTGAGE / LOAN ENGINE</h3>
+                        
+                        <div>
+                            <label class="font-mono text-xs text-gray-400">Loan Amount ($):</label>
+                            <input type="number" id="loanAmount" value="250000" oninput="financial.calc()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 font-mono text-sm text-white">
+                        </div>
+
+                        <div>
+                            <label class="font-mono text-xs text-gray-400">Interest Rate (% APR):</label>
+                            <input type="number" id="loanRate" value="6.5" step="0.1" oninput="financial.calc()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 font-mono text-sm text-white">
+                        </div>
+
+                        <div>
+                            <label class="font-mono text-xs text-gray-400">Term (Years):</label>
+                            <input type="number" id="loanTerm" value="30" oninput="financial.calc()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 font-mono text-sm text-white">
+                        </div>
+                    </div>
+
+                    <!-- Results & Visualization Chart -->
+                    <div class="flex flex-col justify-between gap-4">
+                        <div class="p-4 rounded-xl bg-slate-900/80 border border-cyan-500/20 flex flex-col gap-2">
+                            <div class="flex justify-between font-mono text-xs text-gray-400">
+                                <span>Monthly Payment:</span>
+                                <span id="monthlyPayment" class="text-cyan-400 font-bold text-lg">$0.00</span>
+                            </div>
+                            <div class="flex justify-between font-mono text-xs text-gray-400">
+                                <span>Total Interest:</span>
+                                <span id="totalInterest" class="text-purple-400 font-bold">$0.00</span>
+                            </div>
+                        </div>
+
+                        <div class="w-full h-40 relative">
+                            <canvas id="financialChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. PROGRAMMER / BITWISE PANEL -->
+            <div id="programmerMode" class="calc-mode-panel hidden flex-col gap-4">
+                <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
+                        <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+                            <span class="text-gray-400 block text-[10px]">HEX</span>
+                            <span id="hexDisplay" class="text-cyan-400 font-bold">0x0</span>
+                        </div>
+                        <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+                            <span class="text-gray-400 block text-[10px]">DEC</span>
+                            <span id="decDisplay" class="text-purple-400 font-bold">0</span>
+                        </div>
+                        <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+                            <span class="text-gray-400 block text-[10px]">OCT</span>
+                            <span id="octDisplay" class="text-green-400 font-bold">0</span>
+                        </div>
+                        <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+                            <span class="text-gray-400 block text-[10px]">BIN</span>
+                            <span id="binDisplay" class="text-yellow-400 font-bold overflow-hidden text-ellipsis">0000</span>
+                        </div>
+                    </div>
+
+                    <!-- Bit Flipper Row -->
+                    <div class="flex flex-col gap-2">
+                        <span class="font-mono text-xs text-gray-400">Interactive 16-Bit Toggle Matrix:</span>
+                        <div id="bitFlipper" class="grid grid-cols-8 sm:grid-cols-16 gap-1"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. MATRIX CALCULATOR PANEL -->
+            <div id="matrixMode" class="calc-mode-panel hidden flex-col gap-4">
+                <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4 font-mono">
+                    <h3 class="text-cyan-400 font-bold text-xs">2x2 MATRIX ENGINE</h3>
+                    <div class="grid grid-cols-2 gap-4 max-w-xs mx-auto">
+                        <input id="m00" type="number" value="1" class="bg-slate-900 text-center border border-slate-700 rounded-lg p-2 text-white">
+                        <input id="m01" type="number" value="2" class="bg-slate-900 text-center border border-slate-700 rounded-lg p-2 text-white">
+                        <input id="m10" type="number" value="3" class="bg-slate-900 text-center border border-slate-700 rounded-lg p-2 text-white">
+                        <input id="m11" type="number" value="4" class="bg-slate-900 text-center border border-slate-700 rounded-lg p-2 text-white">
+                    </div>
+
+                    <div class="flex justify-center gap-3">
+                        <button onclick="matrixCalc.determinant()" class="cyber-btn px-4 py-2 rounded-xl text-xs text-cyan-300">Determinant</button>
+                        <button onclick="matrixCalc.inverse()" class="cyber-btn px-4 py-2 rounded-xl text-xs text-cyan-300">Inverse</button>
+                    </div>
+
+                    <div id="matrixResult" class="p-3 bg-slate-900/60 rounded-xl text-center text-xs text-cyan-400 font-mono">
+                        Result will display here...
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Sidebar (History Tape & Formula Quick-Sheet) -->
+        <div class="lg:col-span-4 flex flex-col gap-4">
+            
+            <!-- Live History & Memory Log Glass Card -->
+            <div class="glass-panel p-4 rounded-2xl flex-1 flex flex-col justify-between min-h-[300px]">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-3 mb-3">
+                    <h2 class="font-tech text-xs font-bold text-white tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i> AUDIT TAPE / HISTORY
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        <button onclick="calc.clearHistory()" class="text-xs font-mono text-gray-500 hover:text-red-400 transition-all" title="Clear Tape">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- History Tape Items Scroll Box -->
+                <div id="historyTape" class="flex-1 font-mono text-xs flex flex-col gap-2 overflow-y-auto max-h-[220px] pr-1">
+                    <div class="text-gray-500 text-center py-8 italic">No previous calculations recorded.</div>
+                </div>
+
+                <div class="pt-3 border-t border-gray-800 flex gap-2">
+                    <button onclick="calc.exportHistory()" class="flex-1 cyber-btn py-1.5 rounded-lg font-mono text-xs text-cyan-400 flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-download"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scientific Constants & Quick Formulas Panel -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
+                <h2 class="font-tech text-xs font-bold text-white tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-atom text-purple-400"></i> PHYSICS & MATH CONSTANTS
+                </h2>
+                <div class="grid grid-cols-2 gap-2 font-mono text-xs">
+                    <button class="cyber-btn p-2 rounded-lg text-left text-gray-300 hover:text-cyan-400" onclick="calc.insert('299792458')">
+                        <span class="block text-[10px] text-gray-500">Speed of Light (c)</span>
+                        2.9979e8 m/s
+                    </button>
+                    <button class="cyber-btn p-2 rounded-lg text-left text-gray-300 hover:text-cyan-400" onclick="calc.insert('1.6180339887')">
+                        <span class="block text-[10px] text-gray-500">Golden Ratio (φ)</span>
+                        1.618033
+                    </button>
+                    <button class="cyber-btn p-2 rounded-lg text-left text-gray-300 hover:text-cyan-400" onclick="calc.insert('6.67430e-11')">
+                        <span class="block text-[10px] text-gray-500">Gravitational (G)</span>
+                        6.6743e-11
+                    </button>
+                    <button class="cyber-btn p-2 rounded-lg text-left text-gray-300 hover:text-cyan-400" onclick="calc.insert('6.62607015e-34')">
+                        <span class="block text-[10px] text-gray-500">Planck Const (h)</span>
+                        6.6260e-34
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- GitHub Deploy Modal -->
+    <div id="githubModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass-panel glass-panel-glow p-6 rounded-2xl max-w-lg w-full mx-4 flex flex-col gap-4 border border-cyan-500/50">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="font-tech text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-brands fa-github text-cyan-400"></i> Deploy to GitHub Pages Guide
+                </h3>
+                <button id="closeModal" class="text-gray-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="font-sans text-xs text-gray-300 flex flex-col gap-3 leading-relaxed">
+                <p>Follow these quick steps to host this web application for free on GitHub Pages:</p>
+                <ol class="list-decimal pl-4 flex flex-col gap-2 text-gray-400 font-mono">
+                    <li>Create a new repository on <span class="text-cyan-400">GitHub.com</span>.</li>
+                    <li>Name your project (e.g., <span class="text-cyan-400">quantum-calculator</span>).</li>
+                    <li>Create a file named <span class="text-cyan-400">index.html</span> in your repository.</li>
+                    <li>Paste this entire file source code into <span class="text-cyan-400">index.html</span> and commit.</li>
+                    <li>Go to <span class="text-cyan-400">Settings -> Pages</span> in your GitHub repository.</li>
+                    <li>Set the branch to <span class="text-cyan-400">main</span> / <span class="text-cyan-400">root</span> and click Save!</li>
+                </ol>
+            </div>
+
+            <div class="pt-2 flex justify-end">
+                <button id="closeModalBtn" class="cyber-btn px-4 py-2 rounded-xl text-xs font-mono text-cyan-400 font-bold">Understood</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Web Audio API Synthesizer for Cyberpunk Sound Effects
+        class SoundEngine {
+            constructor() {
+                this.enabled = true;
+                this.ctx = null;
+            }
+
+            initCtx() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playClick() {
+                if (!this.enabled) return;
+                this.initCtx();
+                
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(400, this.ctx.currentTime + 0.05);
+                
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.05);
+            }
+
+            playSuccess() {
+                if (!this.enabled) return;
+                this.initCtx();
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.12);
+
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.12);
+            }
+
+            playError() {
+                if (!this.enabled) return;
+                this.initCtx();
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+                osc.frequency.setValueAtTime(110, this.ctx.currentTime + 0.08);
+
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.2);
+            }
+        }
+
+        const soundEngine = new SoundEngine();
+
+        // Cyberpunk Speech Engine
+        class SpeechEngine {
+            constructor() {
+                this.enabled = false;
+                this.synth = window.speechSynthesis;
+            }
+
+            speak(text) {
+                if (!this.enabled || !this.synth) return;
+                this.synth.cancel(); // stop current speech
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1.0;
+                utterance.pitch = 0.9;
+                this.synth.speak(utterance);
+            }
+        }
+
+        const speechEngine = new SpeechEngine();
+
+        // Scientific Calculator Core State & Engine
+        class ScientificCalc {
+            constructor() {
+                this.expression = '';
+                this.result = '0';
+                this.isDeg = true;
+                this.history = [];
+                this.memory = 0;
+
+                this.displayEl = document.getElementById('calcDisplay');
+                this.exprEl = document.getElementById('calcExpression');
+                this.breakdownEl = document.getElementById('stepBreakdown');
+                this.historyTapeEl = document.getElementById('historyTape');
+            }
+
+            insert(val) {
+                soundEngine.playClick();
+                if (this.expression === '0') this.expression = '';
+                this.expression += val;
+                this.updateDisplay();
+            }
+
+            clearAll() {
+                soundEngine.playClick();
+                this.expression = '';
+                this.result = '0';
+                this.updateDisplay();
+                this.breakdownEl.innerText = "System Reset.";
+            }
+
+            backspace() {
+                soundEngine.playClick();
+                this.expression = this.expression.slice(0, -1);
+                this.updateDisplay();
+            }
+
+            setAngleMode() {
+                soundEngine.playClick();
+                this.isDeg = !this.isDeg;
+                document.getElementById('angleMode').innerText = this.isDeg ? 'DEG' : 'RAD';
+            }
+
+            updateDisplay() {
+                this.exprEl.innerText = this.expression || '0';
+                this.displayEl.innerText = this.result;
+            }
+
+            // Safe Expression Evaluator
+            evaluate() {
+                try {
+                    let sanitized = this.expression
+                        .replace(/π|pi/g, Math.PI)
+                        .replace(/e/g, Math.E)
+                        .replace(/sin\(/g, this.isDeg ? 'Math.sin((Math.PI/180)*' : 'Math.sin(')
+                        .replace(/cos\(/g, this.isDeg ? 'Math.cos((Math.PI/180)*' : 'Math.cos(')
+                        .replace(/tan\(/g, this.isDeg ? 'Math.tan((Math.PI/180)*' : 'Math.tan(')
+                        .replace(/asin\(/g, this.isDeg ? '(180/Math.PI)*Math.asin(' : 'Math.asin(')
+                        .replace(/acos\(/g, this.isDeg ? '(180/Math.PI)*Math.acos(' : 'Math.acos(')
+                        .replace(/atan\(/g, this.isDeg ? '(180/Math.PI)*Math.atan(' : 'Math.atan(')
+                        .replace(/log\(/g, 'Math.log10(')
+                        .replace(/ln\(/g, 'Math.log(')
+                        .replace(/sqrt\(/g, 'Math.sqrt(')
+                        .replace(/cbrt\(/g, 'Math.cbrt(')
+                        .replace(/\^/g, '**');
+
+                    // Evaluate Factorials if present
+                    sanitized = sanitized.replace(/(\d+)!/g, (match, num) => {
+                        let n = parseInt(num);
+                        let fact = 1;
+                        for (let i = 1; i <= n; i++) fact *= i;
+                        return fact;
+                    });
+
+                    const res = eval(sanitized);
+                    if (res === undefined || isNaN(res)) throw new Error("Invalid Format");
+
+                    this.result = Number.isInteger(res) ? res.toString() : parseFloat(res.toFixed(8)).toString();
+                    
+                    soundEngine.playSuccess();
+                    speechEngine.speak("Result is " + this.result);
+
+                    // Record history
+                    this.addHistory(this.expression, this.result);
+                    
+                    this.breakdownEl.innerText = `Evaluated successfully: ${this.expression} = ${this.result}`;
+                    this.expression = this.result;
+                    this.updateDisplay();
+
+                } catch (err) {
+                    soundEngine.playError();
+                    this.breakdownEl.innerText = "Syntax Error in formula input.";
+                }
+            }
+
+            addHistory(expr, res) {
+                const item = { expr, res, time: new Date().toLocaleTimeString() };
+                this.history.unshift(item);
+                this.renderHistory();
+            }
+
+            renderHistory() {
+                if (this.history.length === 0) {
+                    this.historyTapeEl.innerHTML = `<div class="text-gray-500 text-center py-8 italic">No previous calculations.</div>`;
+                    return;
+                }
+
+                this.historyTapeEl.innerHTML = this.history.map(item => `
+                    <div class="p-2 rounded-xl bg-slate-900/60 border border-slate-800/80 flex flex-col gap-1 cursor-pointer hover:border-cyan-500/40 transition-all" onclick="calc.expression='${item.res}'; calc.updateDisplay();">
+                        <div class="flex justify-between text-[10px] text-gray-500">
+                            <span>${item.time}</span>
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div class="text-gray-300 text-right">${item.expr} =</div>
+                        <div class="text-cyan-400 font-bold text-right">${item.res}</div>
+                    </div>
+                `).join('');
+            }
+
+            clearHistory() {
+                this.history = [];
+                this.renderHistory();
+            }
+
+            exportHistory() {
+                if (this.history.length === 0) return;
+                const csvContent = "data:text/csv;charset=utf-8," 
+                    + "Timestamp,Expression,Result\n"
+                    + this.history.map(e => `"${e.time}","${e.expr}","${e.res}"`).join("\n");
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "calc_history.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        const calc = new ScientificCalc();
+
+        // Interactive 2D Grapher Engine
+        class Grapher {
+            constructor() {
+                this.canvas = document.getElementById('graphCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.scale = 30; // pixels per unit
+                this.offsetX = 0;
+                this.offsetY = 0;
+
+                this.initResize();
+            }
+
+            initResize() {
+                const resize = () => {
+                    this.canvas.width = this.canvas.parentElement.clientWidth;
+                    this.canvas.height = this.canvas.parentElement.clientHeight;
+                    this.draw();
+                };
+                window.addEventListener('resize', resize);
+                setTimeout(resize, 100);
+            }
+
+            draw() {
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+                const ctx = this.ctx;
+
+                ctx.clearRect(0, 0, width, height);
+
+                const centerX = width / 2 + this.offsetX;
+                const centerY = height / 2 + this.offsetY;
+
+                // Draw Axes Grid
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.lineWidth = 1;
+
+                for (let x = 0; x < width; x += this.scale) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+                }
+
+                for (let y = 0; y < height; y += this.scale) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+
+                // Main Axes Lines
+                ctx.strokeStyle = 'rgba(6, 182, 212, 0.6)';
+                ctx.lineWidth = 2;
+
+                ctx.beginPath();
+                ctx.moveTo(0, centerY);
+                ctx.lineTo(width, centerY);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(centerX, 0);
+                ctx.lineTo(centerX, height);
+                ctx.stroke();
+
+                // Plot Formula Function
+                const expr = document.getElementById('graphInput').value;
+                if (!expr) return;
+
+                ctx.strokeStyle = '#ec4899';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+
+                let first = true;
+                for (let px = 0; px < width; px++) {
+                    const x = (px - centerX) / this.scale;
+                    try {
+                        let parsedExpr = expr
+                            .replace(/sin/g, 'Math.sin')
+                            .replace(/cos/g, 'Math.cos')
+                            .replace(/tan/g, 'Math.tan')
+                            .replace(/\^/g, '**');
+
+                        const y = eval(parsedExpr.replace(/x/g, `(${x})`));
+                        const py = centerY - (y * this.scale);
+
+                        if (first) {
+                            ctx.moveTo(px, py);
+                            first = false;
+                        } else {
+                            ctx.lineTo(px, py);
+                        }
+                    } catch (e) {
+                        // ignore evaluation skips
+                    }
+                }
+                ctx.stroke();
+            }
+
+            zoom(factor) {
+                this.scale *= factor;
+                this.draw();
+            }
+
+            resetView() {
+                this.scale = 30;
+                this.offsetX = 0;
+                this.offsetY = 0;
+                this.draw();
+            }
+        }
+
+        const grapher = new Grapher();
+
+        // Unit Converter Logic
+        class Converter {
+            constructor() {
+                this.units = {
+                    length: { Meter: 1, Kilometer: 1000, Mile: 1609.34, Foot: 0.3048, Inch: 0.0254 },
+                    mass: { Kilogram: 1, Gram: 0.001, Pound: 0.453592, Ounce: 0.0283495 },
+                    data: { Byte: 1, Kilobyte: 1024, Megabyte: 1048576, Gigabyte: 1073741824, Terabyte: 1099511627776 },
+                    speed: { 'm/s': 1, 'km/h': 0.277778, 'mph': 0.44704, 'Knot': 0.514444 }
+                };
+                this.updateCategory();
+            }
+
+            updateCategory() {
+                const cat = document.getElementById('converterCategory').value;
+                const fromSelect = document.getElementById('convertFromUnit');
+                const toSelect = document.getElementById('convertToUnit');
+
+                fromSelect.innerHTML = '';
+                toSelect.innerHTML = '';
+
+                if (cat === 'temp') {
+                    ['Celsius', 'Fahrenheit', 'Kelvin'].forEach(u => {
+                        fromSelect.innerHTML += `<option value="${u}">${u}</option>`;
+                        toSelect.innerHTML += `<option value="${u}">${u}</option>`;
+                    });
+                } else {
+                    Object.keys(this.units[cat]).forEach(u => {
+                        fromSelect.innerHTML += `<option value="${u}">${u}</option>`;
+                        toSelect.innerHTML += `<option value="${u}">${u}</option>`;
+                    });
+                }
+                this.calculate();
+            }
+
+            calculate() {
+                const cat = document.getElementById('converterCategory').value;
+                const val = parseFloat(document.getElementById('convertFromVal').value) || 0;
+                const from = document.getElementById('convertFromUnit').value;
+                const to = document.getElementById('convertToUnit').value;
+                const target = document.getElementById('convertToVal');
+
+                if (cat === 'temp') {
+                    let celsius = val;
+                    if (from === 'Fahrenheit') celsius = (val - 32) * 5/9;
+                    if (from === 'Kelvin') celsius = val - 273.15;
+
+                    let result = celsius;
+                    if (to === 'Fahrenheit') result = (celsius * 9/5) + 32;
+                    if (to === 'Kelvin') result = celsius + 273.15;
+
+                    target.value = result.toFixed(4);
+                } else {
+                    const baseVal = val * this.units[cat][from];
+                    const result = baseVal / this.units[cat][to];
+                    target.value = result.toFixed(6);
+                }
+            }
+        }
+
+        const converter = new Converter();
+
+        // Financial & Mortgage Engine
+        class FinancialCalc {
+            constructor() {
+                this.chart = null;
+                setTimeout(() => this.calc(), 200);
+            }
+
+            calc() {
+                const P = parseFloat(document.getElementById('loanAmount').value) || 0;
+                const r = (parseFloat(document.getElementById('loanRate').value) || 0) / 100 / 12;
+                const n = (parseFloat(document.getElementById('loanTerm').value) || 0) * 12;
+
+                if (P <= 0 || r <= 0 || n <= 0) return;
+
+                const M = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+                const totalPaid = M * n;
+                const totalInterest = totalPaid - P;
+
+                document.getElementById('monthlyPayment').innerText = `$${M.toFixed(2)}`;
+                document.getElementById('totalInterest').innerText = `$${totalInterest.toFixed(2)}`;
+
+                this.renderChart(P, totalInterest);
+            }
+
+            renderChart(principal, interest) {
+                const ctx = document.getElementById('financialChart').getContext('2d');
+                if (this.chart) this.chart.destroy();
+
+                this.chart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Principal Loan', 'Total Interest'],
+                        datasets: [{
+                            data: [principal, interest],
+                            backgroundColor: ['#06b6d4', '#8b5cf6'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#9ca3af', font: { family: 'JetBrains Mono', size: 10 } }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        const financial = new FinancialCalc();
+
+        // Programmer Bitwise Matrix Engine
+        class ProgrammerCalc {
+            constructor() {
+                this.value = 0;
+                this.container = document.getElementById('bitFlipper');
+                this.initBits();
+            }
+
+            initBits() {
+                this.container.innerHTML = '';
+                for (let i = 15; i >= 0; i--) {
+                    const btn = document.createElement('button');
+                    btn.className = 'cyber-btn py-1.5 rounded text-[10px] font-mono text-gray-400 hover:text-cyan-400';
+                    btn.innerText = '0';
+                    btn.onclick = () => this.toggleBit(i, btn);
+                    this.container.appendChild(btn);
+                }
+                this.updateDisplays();
+            }
+
+            toggleBit(bitIndex, btn) {
+                soundEngine.playClick();
+                this.value ^= (1 << bitIndex);
+                btn.innerText = (this.value & (1 << bitIndex)) ? '1' : '0';
+                btn.classList.toggle('text-cyan-400', (this.value & (1 << bitIndex)) !== 0);
+                this.updateDisplays();
+            }
+
+            updateDisplays() {
+                document.getElementById('hexDisplay').innerText = '0x' + this.value.toString(16).toUpperCase();
+                document.getElementById('decDisplay').innerText = this.value.toString(10);
+                document.getElementById('octDisplay').innerText = this.value.toString(8);
+                document.getElementById('binDisplay').innerText = this.value.toString(2).padStart(16, '0');
+            }
+        }
+
+        const programmer = new ProgrammerCalc();
+
+        // Matrix 2x2 Operations
+        const matrixCalc = {
+            determinant() {
+                const a = parseFloat(document.getElementById('m00').value) || 0;
+                const b = parseFloat(document.getElementById('m01').value) || 0;
+                const c = parseFloat(document.getElementById('m10').value) || 0;
+                const d = parseFloat(document.getElementById('m11').value) || 0;
+
+                const det = (a * d) - (b * c);
+                document.getElementById('matrixResult').innerText = `Determinant (det A) = ${det}`;
+                soundEngine.playSuccess();
+            },
+            inverse() {
+                const a = parseFloat(document.getElementById('m00').value) || 0;
+                const b = parseFloat(document.getElementById('m01').value) || 0;
+                const c = parseFloat(document.getElementById('m10').value) || 0;
+                const d = parseFloat(document.getElementById('m11').value) || 0;
+
+                const det = (a * d) - (b * c);
+                if (det === 0) {
+                    document.getElementById('matrixResult').innerText = "Matrix is non-invertible (det = 0)";
+                    soundEngine.playError();
+                    return;
+                }
+
+                const invA = (d / det).toFixed(2);
+                const invB = (-b / det).toFixed(2);
+                const invC = (-c / det).toFixed(2);
+                const invD = (a / det).toFixed(2);
+
+                document.getElementById('matrixResult').innerText = `Inverse Matrix:\n[ ${invA}, ${invB} ]\n[ ${invC}, ${invD} ]`;
+                soundEngine.playSuccess();
+            }
+        };
+
+        // Background Particle Constellation
+        const bgCanvas = document.getElementById('bgCanvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        let particles = [];
+
+        function resizeBg() {
+            bgCanvas.width = window.innerWidth;
+            bgCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeBg);
+        resizeBg();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * bgCanvas.width;
+                this.y = Math.random() * bgCanvas.height;
+                this.vx = (Math.random() - 0.5) * 0.8;
+                this.vy = (Math.random() - 0.5) * 0.8;
+                this.radius = Math.random() * 1.5 + 1;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > bgCanvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > bgCanvas.height) this.vy *= -1;
+            }
+
+            draw() {
+                bgCtx.beginPath();
+                bgCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                bgCtx.fillStyle = 'rgba(6, 182, 212, 0.4)';
+                bgCtx.fill();
+            }
+        }
+
+        for (let i = 0; i < 45; i++) particles.push(new Particle());
+
+        function animateBg() {
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 120) {
+                        bgCtx.beginPath();
+                        bgCtx.moveTo(particles[i].x, particles[i].y);
+                        bgCtx.lineTo(particles[j].x, particles[j].y);
+                        bgCtx.strokeStyle = `rgba(6, 182, 212, ${1 - dist / 120 * 0.8})`;
+                        bgCtx.lineWidth = 0.5;
+                        bgCtx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateBg);
+        }
+
+        // Navigation Tab Switching Logic
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                soundEngine.playClick();
+                document.querySelectorAll('.nav-tab').forEach(t => {
+                    t.classList.remove('active', 'bg-cyan-500/20', 'border', 'border-cyan-500/50', 'text-white');
+                    t.classList.add('text-gray-400');
+                });
+                tab.classList.add('active', 'bg-cyan-500/20', 'border', 'border-cyan-500/50', 'text-white');
+
+                const mode = tab.dataset.mode;
+                document.querySelectorAll('.calc-mode-panel').forEach(panel => panel.classList.add('hidden'));
+                document.getElementById(`${mode}Mode`).classList.remove('hidden');
+
+                if (mode === 'graph') grapher.draw();
+            });
+        });
+
+        // Toggle Audio Synthesizer
+        document.getElementById('soundToggle').addEventListener('click', () => {
+            soundEngine.enabled = !soundEngine.enabled;
+            const icon = document.getElementById('soundIcon');
+            icon.className = soundEngine.enabled ? 'fa-solid fa-volume-high text-sm' : 'fa-solid fa-volume-xmark text-sm text-red-400';
+        });
+
+        // Toggle Voice Output
+        document.getElementById('speechToggle').addEventListener('click', () => {
+            speechEngine.enabled = !speechEngine.enabled;
+            const icon = document.getElementById('speechIcon');
+            icon.className = speechEngine.enabled ? 'fa-solid fa-comment-dots text-sm text-cyan-400' : 'fa-solid fa-comment-slash text-sm text-gray-500';
+        });
+
+        // Theme Customizer Toggle
+        const themes = [
+            { name: 'Cyan', accent: '#06b6d4', glow: 'rgba(6, 182, 212, 0.4)' },
+            { name: 'Magenta', accent: '#ec4899', glow: 'rgba(236, 72, 153, 0.4)' },
+            { name: 'Green', accent: '#10b981', glow: 'rgba(16, 185, 129, 0.4)' },
+            { name: 'Gold', accent: '#f59e0b', glow: 'rgba(245, 158, 11, 0.4)' }
+        ];
+        let currentThemeIdx = 0;
+
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            currentThemeIdx = (currentThemeIdx + 1) % themes.length;
+            const t = themes[currentThemeIdx];
+            document.documentElement.style.setProperty('--accent-color', t.accent);
+            document.documentElement.style.setProperty('--accent-glow', t.glow);
+            soundEngine.playClick();
+        });
+
+        // Modal Handlers
+        const modal = document.getElementById('githubModal');
+        document.getElementById('githubModalBtn').onclick = () => {
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+        };
+        document.getElementById('closeModal').onclick = document.getElementById('closeModalBtn').onclick = () => {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+        };
+
+        // Window Load Initialization
+        window.onload = function() {
+            animateBg();
+        };
+    </script>
+</body>
+</html>

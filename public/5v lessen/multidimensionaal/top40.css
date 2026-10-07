@@ -1,0 +1,137 @@
+/* Google Font laden voor strakke typografie */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* Algemene pagina opmaak */
+body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0f172a; /* Donkere, moderne uitstraling */
+    color: #f8fafc;
+    margin: 0;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Logo styling */
+#logo {
+    max-width: 220px;
+    height: auto;
+    margin-bottom: 35px;
+    filter: drop-shadow(0 10px 15px rgba(225, 29, 72, 0.3));
+    transition: transform 0.3s ease;
+}
+
+#logo:hover {
+    transform: scale(1.04);
+}
+
+/* Tabel container opmaak */
+table {
+    width: 100%;
+    max-width: 850px;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #1e293b;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.5), 0 0 2px rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Tabelkop (Header) */
+thead tr {
+    background: #1e293b;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+th {
+    padding: 18px 20px;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Rijen opmaak & Hover effect */
+tbody tr {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+tbody tr:last-child {
+    border-bottom: none;
+}
+
+tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    transform: scale(1.005);
+}
+
+/* Cellen algemeen */
+td {
+    padding: 14px 20px;
+    vertical-align: middle;
+}
+
+/* Kolom 1: Positienummer */
+td:nth-child(1) {
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: #f43f5e; /* Top 40 Rood/Roze Accent */
+    text-align: center;
+    width: 60px;
+}
+
+/* Top 3 Kleuraccenten (Goud, Zilver, Brons) */
+tbody tr:nth-child(1) td:nth-child(1) { color: #facc15; font-size: 1.5rem; text-shadow: 0 0 12px rgba(250, 204, 21, 0.4); }
+tbody tr:nth-child(2) td:nth-child(1) { color: #cbd5e1; font-size: 1.4rem; }
+tbody tr:nth-child(3) td:nth-child(1) { color: #fb923c; font-size: 1.4rem; }
+
+/* Kolom 2: Cover Afbeelding */
+td:nth-child(2) {
+    width: 60px;
+}
+
+td:nth-child(2) img {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    object-fit: cover;
+    display: block;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Kolom 3: Titel & Artiest */
+td:nth-child(3) {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #f8fafc;
+}
+
+/* Tweete regel in titelkolom (Artiest) opmaak */
+td:nth-child(3) div:last-child,
+td:nth-child(3) span:last-child {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-top: 3px;
+}
+
+/* Kolom 4 & 5: Weken & Vorige (Badge stijl) */
+td:nth-child(4), 
+td:nth-child(5) {
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+/* Maak van weken en vorige cijfers een mooi afgerond vakje */
+td:nth-child(4), td:nth-child(5) {
+    font-feature-settings: "tnum";
+}
